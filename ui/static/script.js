@@ -29,8 +29,13 @@ function wait(ms){
   }
 }
 
+function generateSessionID(){
+    let id = Math.floor(Math.random() * 100000000);
+    return id;
+}
+
 //Move user search result page
-function sendToNewPage() {
+function sendToNewPage(id) {
     console.log("Sent user to new page");
     showLoader()
 
@@ -38,7 +43,7 @@ function sendToNewPage() {
     if (xhr.readyState === 4 || xhr.status === 201) {
         if(searchType == "basic"){
             //window.location.href = "https://result.vulkanai.org/views/search-result"; //Server Side
-            window.location.href = "http://127.0.0.1:8000/views/search-result"; //Local Side
+            window.location.href = "http://127.0.0.1:8000/views/search-result/" + id; //Local Side
         } else {
             //window.location.href = "https://result.vulkanai.org/views/final-result"; //Server Side
             window.location.href = "http://127.0.0.1:8000/views/final-result"; //Local Side
@@ -51,26 +56,31 @@ function sendToNewPage() {
 //Send data to Python
 document.getElementById("search-button").addEventListener("click", function(event) {
     xhr = null;
+    event.preventDefault();
     //let prefWebsite = document.getElementById("website-value").value;//Get prefered website for searching
     let prefWebsite = ""; //Just for now while we dont use pref website
     let inputValue = document.getElementById("search-input").value;//If using input field use 'document.getElementById("search-input")[0].value'
+    let id = generateSessionID();
     console.log(inputValue);
     console.log(prefWebsite)
     console.log(searchType)
 
     xhr = getXmlHttpRequestObject();
-    xhr.onreadystatechange = sendToNewPage;
+    xhr.onreadystatechange = function () {
+        return sendToNewPage(id);
+    };
 
     //SEND REQUEST
     //xhr.open("POST", "https://result.vulkanai.org/views/search-result", true); //Server Side
-    xhr.open("POST", "http://127.0.0.1:8000/views/search-result", true); //Local Side
+    //xhr.open("POST", "http://127.0.0.1:8000/views/search-result", true); //Local Side
+    xhr.open("POST", "http://127.0.0.1:8000/views/", true); //Local Side
 
     xhr.setRequestHeader("Accept", "application/json");
     xhr.setRequestHeader("Content-Type", "application/json");//application/json;charset=UTF-8
 
     xhr.mode = 'no-cors';
     // Send the request over the network
-    xhr.send(JSON.stringify({"data": inputValue, "pref-website": prefWebsite, "search-type": searchType}));
+    xhr.send(JSON.stringify({"data": inputValue, "pref-website": prefWebsite, "search-type": searchType, "id": id}));
 });
 
 //Make search bar grow in height as user keeps typing into it

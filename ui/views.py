@@ -1,10 +1,10 @@
 import sys
 
 #sys.path.append(r"/var/www/html/")  # Server Side
-from flask import Blueprint, render_template, request, redirect, url_for, render_template_string, jsonify, Response
+from flask import Blueprint, render_template, request, redirect, url_for, render_template_string, jsonify, Response, session
 from web_search.search_engine import SearchEngine
 from compression.ai.gpt_engine import GPTEngine
-import yaml, os, flask, json, requests, time
+import yaml, os, flask, json, requests, time, random
 from compression.main import ScrapingController
 from __init__ import cache
 
@@ -24,19 +24,27 @@ searching_type = "basic"
 #content = open("/var/www/html/ui/templates/template.html", "r", encoding="utf-8").read()  # Server Side
 content = open("ui/templates/template.html", "r",encoding="utf-8").read() #Local Side
 finalContent = ""
-
+sessionID = 0
 
 # MAIN FUNCTIONS
 @views.route("/", methods=["POST", "GET", "PUT"])
 def home():
     # css_file = open("ui/static/result.css", 'w')  # Clean css file
+    if request.method == "POST":
+        data = request.get_json()
+        session["id"] = data["id"]
+        session["data"] = data #Passing data to search result through session
+        session["used"] = False
+        print("Unique Session ID: ",data['id'])
+        return redirect(url_for("views.search_result",id=str(data["id"])))
+
     return render_template("index.html")
 
 
-@views.route("/go-to")
-def go_to():
+@views.route("/go-to/<id>")
+def go_to(id):
     print("Redirected to search result")
-    return redirect(url_for("views.search_result"))
+    return redirect(url_for("views.search_result",id=id))
 
 #@cache.memoize(50)
 @views.route("/final-result", methods=["POST", "GET", "PUT"])
@@ -80,20 +88,26 @@ def final_result():
     return render_template_string(fixedContent)
 
 #@cache.memoize(50)
-@views.route("/search-result", methods=["POST", "GET", "PUT"])
-def search_result():
+@views.route("/search-result/<id>", methods=["POST", "GET", "PUT"])
+def search_result(id):
+    print(100*"-")
     global content
-    # I want to buy used honda sedan with 130k or less miles, under 6k in good condition 30 miles away from atlanta
     formatted_search = ""
+    #Debug Code
+    print(session)
     if request.method == "GET":
         print("Get request received")
         print("Request Headers ", request.headers)  # Keep For Debug
         print("Request Environ ", request.environ)
-        #cache.clear()
-    if request.method == "POST":
+        cache.clear()
+    # I want to buy used honda sedan with 130k or less miles, under 6k in good condition 30 miles away from atlanta
+    #Perform a check to see if user is in their session
+    if "id" in session and str(id) == str(session["id"]) and session["used"] == False:
+        print("Passed the check")
+        received_data = session["data"]
+        session['used'] = True
         print("Post Request Received")
 
-        received_data = request.get_json()  # received_data = request.json
         print(received_data)
         print(f"received data: {received_data['data']}")
         print(f"Prefered Website: {received_data['pref-website']}")
@@ -132,7 +146,7 @@ def search_result():
                               link['title'] + "</a><br><p>" + link['url'] + "</p></li>" + content[pos:]
 
             print("Redirected to go-to page")
-            return redirect(url_for("views.go_to"))
+            return redirect(url_for("views.go_to", id=id))#Redirect back to same page so it would show updated content
 
         elif searching_type == "speed":
             print("Speed Search")
@@ -142,7 +156,7 @@ def search_result():
             parse_website(received_data, formatted_search, page, content)
 
             print("Redirected to go-to page")
-            return redirect(url_for("views.go_to"))
+            return redirect(url_for("views.go_to", id=id))
 
     print("Showing actual result")
     return render_template_string(content)

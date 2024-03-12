@@ -144,6 +144,10 @@ showLoader = function(e) {
     document.getElementById('loader').style.visibility = 'visible';
 }
 
+//let http = require('http');
+//const { id } = require('./script');
+//let sessionID = id;
+
 //Move user search result page
 function sendToNewPage() {
     console.log("Sending user to new page");
@@ -151,7 +155,7 @@ function sendToNewPage() {
     // Check response is ready or not
     if (xhr.readyState === 4 || xhr.status === 201) {
         //window.location.href = "https://result.vulkanai.org/views/final-result"; // Server Side
-        window.location.href = "http://127.0.0.1:8000/views/final-result";//Local Side
+        //window.location.href = "http://127.0.0.1:8000/views/final-result";//Local Side
         console.log("Received data");
         console.log(xhr.responseText);
     }
@@ -173,8 +177,9 @@ for (var i = 0; i < result_links.length; i++) {
         xhr.onreadystatechange = sendToNewPage;
 
         //SENDING REQUEST
+        let link = "http://127.0.0.1:8000/views/final-result/"
         //xhr.open("POST", "https://result.vulkanai.org/views/final-result", true); //Server Side
-        xhr.open("POST", "http://127.0.0.1:8000/views/final-result", true);//Local Side
+        xhr.open("POST", "http://127.0.0.1:8000/views/final-result/", true);//Local Side
         xhr.setRequestHeader("Accept", "application/json");
         xhr.setRequestHeader("Content-Type", "application/json");//application/json;charset=UTF-8
 
